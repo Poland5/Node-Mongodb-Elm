@@ -3,7 +3,6 @@
 var mongoose = require('mongoose')
 var chalk = require('chalk');
 
-
 mongoose.connect('mongodb://localhost/elmhd');
 
 const db = mongoose.connection;

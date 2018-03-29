@@ -3,24 +3,14 @@ import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
+import configLite from 'config-lite';
+import session from 'express-session';
+import connectMongo from 'connect-mongo';
 
 import router from './routes/index';
 import db from './mongodb/db';
 
 const app = express();
-
-app.all('*', (req, res, next) => {
-	res.header("Access-Control-Allow-Origin", req.headers.origin || '*');
-	res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-	res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
-	res.header("Access-Control-Allow-Credentials", true); //可以带cookies
-	res.header("X-Powered-By", '3.2.1')
-	if (req.method == 'OPTIONS') {
-	  	res.send(200);
-	} else {
-	    next();
-	}
-});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -30,9 +20,25 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('./public'));
 
-router(app);
+const MongoStore = connectMongo(session);
+const config = configLite(__dirname);
+
+app.use(session({
+		name: config.session.name,
+		secret: config.session.secret,
+		resave: true,
+		saveUninitialized: false,
+		cookie: config.session.cookie,
+		store: new MongoStore({
+		url: config.url
+	})
+}))
+
+
+
+// router(app);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
